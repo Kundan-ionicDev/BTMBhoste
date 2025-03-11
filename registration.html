@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>रुग्ण नोंदणी फॉर्म - मोफत आरोग्य तपासणी शिबिर</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 90%;
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            text-align: left;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        input, select, textarea {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+    <script>
+        function saveToExcel() {
+            let fullName = document.getElementById("fullName").value.trim();
+            let age = document.getElementById("age").value.trim();
+            let gender = document.getElementById("gender").value;
+            let mobile = document.getElementById("mobile").value.trim();
+            let address = document.getElementById("address").value.trim();
+            let serviceRequired = document.getElementById("serviceRequired").value;
+            let medicalHistory = document.getElementById("medicalHistory").value.trim();
+            let attendant = document.getElementById("attendant").value;
+            let registeredBy = document.getElementById("registeredBy").value;
+            
+            if (!fullName || !age || !mobile || !address) {
+                alert("कृपया सर्व आवश्यक माहिती भरा!");
+                return;
+            }
+    
+            let newData = [fullName, age, gender, mobile, address, serviceRequired, medicalHistory, attendant, registeredBy];
+    
+            let existingData = [];
+            let csvFileName = "patient_data.csv";
+    
+            // Check if file exists
+            fetch(csvFileName)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error("File not found, creating a new one...");
+                    }
+                    return response.text();
+                })
+                .then(text => {
+                    let rows = text.split("\n");
+                    existingData = rows.map(row => row.split(","));
+    
+                    // Check for duplicate entries (by name and mobile number)
+                    for (let row of existingData) {
+                        if (row[0] === fullName && row[3] === mobile) {
+                            alert("ही नोंदणी आधीच अस्तित्वात आहे!");
+                            return;
+                        }
+                    }
+    
+                    // Append new data
+                    existingData.push(newData);
+    
+                    let csvContent = "data:text/csv;charset=utf-8," + existingData.map(e => e.join(",")).join("\n");
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", csvFileName);
+                    document.body.appendChild(link);
+                    link.click();
+                })
+                .catch(error => {
+                    console.error("Error:", error.message);
+                    
+                    // Create a new CSV file if not found
+                    let headers = ["पूर्ण नाव", "वय", "लिंग", "मोबाइल क्रमांक", "पत्ता", "तपासणी सेवा", "वैद्यकीय इतिहास", "रुग्ण परिचर", "नोंदणी करणारा"];
+                    let csvContent = "data:text/csv;charset=utf-8," + [headers, newData].map(e => e.join(",")).join("\n");
+                    
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", csvFileName);
+                    document.body.appendChild(link);
+                    link.click();
+                });
+        }
+    </script>
+    
+</head>
+<body>
+    <div class="container">
+        <h2>रुग्ण नोंदणी फॉर्म</h2>
+        <form id="registrationForm" onsubmit="event.preventDefault(); saveToExcel();">
+            <label>पूर्ण नाव:</label>
+            <input type="text" id="fullName" required>
+            
+            <label>वय:</label>
+            <input type="number" id="age" required>
+            
+            <label>लिंग:</label>
+            <select id="gender" required>
+                <option value="पुरुष">पुरुष</option>
+                <option value="स्त्री">स्त्री</option>
+                <option value="इतर">इतर</option>
+            </select>
+            
+            <label>मोबाइल क्रमांक:</label>
+            <input type="text" id="mobile" required>
+            
+            <label>पत्ता:</label>
+            <textarea id="address" rows="3" required></textarea>
+            
+            <label>तपासणी आवश्यक सेवा:</label>
+            <select id="serviceRequired" required>
+                <option value="CBC">CBC</option>
+                <option value="Blood Pressure">रक्तदाब तपासणी</option>
+                <option value="ECG">ECG</option>
+                <option value="Sugar Test">साखर तपासणी</option>
+            </select>
+            
+            <label>पूर्व इतिहास / आजार (असल्यास नमूद करा):</label>
+            <textarea id="medicalHistory" rows="3"></textarea>
+            
+            <label>रुग्ण परिचर:</label>
+            <select id="attendant" required>
+                <option value="Dr. Kamble (MBBS)">Dr. Kamble (MBBS)</option>
+                <option value="Dr Roshan Sakpal (Bpth)">Dr Roshan Sakpal (Bpth)</option>
+                <option value="Swatie (Nurse)">Swatie (Nurse)</option>
+                <option value="Manasi (Nurse)">Manasi (Nurse)</option>
+                <option value="Anita (Nurse)">Anita (Nurse)</option>
+                <option value="Vishaka (Nurse)">Vishaka (Nurse)</option>
+                <option value="Sayali (Nurse)">Sayali (Nurse)</option>
+            </select>
+            
+            <label>नोंदणी करणारा:</label>
+            <select id="registeredBy" required>
+                <option value="Swaroop">Swaroop</option>
+                <option value="Ketan">Ketan</option>
+                <option value="Kundan">Kundan</option>
+            </select>
+            
+            <button type="submit">नोंदणी करा</button>
+        </form>
+    </div>
+</body>
+</html>
